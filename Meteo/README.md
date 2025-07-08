@@ -230,5 +230,5 @@ Questo progetto è distribuito sotto licenza MIT. Vedi file LICENSE per dettagli
 
 ## Contributori
 
-- Sviluppatore: [Il tuo nome]
-- Data: Dicembre 2024
+- Sviluppatore: Dima Marco
+- Data: Luglio 2025
