@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storico Meteo - <span id="cityNameTitle"></span></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cloud-sun me-2"></i>
+                Meteo Italia
+            </a>
+        </div>
+    </nav>
+    <header class="bg-gradient-primary text-white py-4">
+        <div class="container text-center">
+            <h1 class="display-5 fw-bold">Storico Meteo <span id="cityNameHeader"></span></h1>
+            <p class="lead">Andamento delle temperature storiche</p>
+        </div>
+    </header>
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-4">
+                    <label for="daysSelect" class="form-label">Periodo:</label>
+                    <select id="daysSelect" class="form-select">
+                        <option value="1">Ultimo giorno</option>
+                        <option value="3">Ultimi 3 giorni</option>
+                        <option value="7" selected>Ultima settimana</option>
+                        <option value="30">Ultimo mese</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="loadBtn">
+                        <i class="fas fa-chart-line me-1"></i>Carica
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="py-5">
+        <div class="container">
+            <div id="chartSection" style="display:none;">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Andamento Temperature</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="temperatureChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div id="tableSection" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Dati Dettagliati</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Data/Ora</th>
+                                        <th>Temperatura</th>
+                                        <th>Percepita</th>
+                                        <th>Condizioni</th>
+                                        <th>Umidità</th>
+                                        <th>Vento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="loadingSpinner" class="text-center py-5" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Caricamento...</span>
+                </div>
+                <p class="mt-2">Caricamento dati storici...</p>
+            </div>
+            <div id="noDataMessage" class="text-center py-5" style="display: none;">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Nessun dato storico disponibile per i parametri selezionati.
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="small mb-0">Dati forniti da Open Meteo - Storico dati disponibile per gli ultimi 30 giorni</p>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    let chart = null;
+    function getCityFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('city');
+    }
+    function showLoading() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('chartSection').style.display = 'none';
+        document.getElementById('tableSection').style.display = 'none';
+        document.getElementById('noDataMessage').style.display = 'none';
+    }
+    function hideLoading() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+    function showNoData() {
+        document.getElementById('noDataMessage').style.display = 'block';
+    }
+    function showResults() {
+        document.getElementById('chartSection').style.display = 'block';
+        document.getElementById('tableSection').style.display = 'block';
+    }
+    async function loadHistory() {
+        const city = getCityFromUrl();
+        const days = document.getElementById('daysSelect').value;
+        if (!city) return;
+        showLoading();
+        try {
+            const response = await fetch(`/api/weather/history/${encodeURIComponent(city)}?days=${days}`);
+            if (!response.ok) throw new Error('Errore nella richiesta');
+            const data = await response.json();
+            if (!data || data.length === 0) {
+                showNoData();
+                hideLoading();
+                return;
+            }
+            // Chart
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            if (chart) chart.destroy();
+            const labels = data.map(item => new Date(item.timestamp).toLocaleString('it-IT'));
+            const temps = data.map(item => item.temperature);
+            const feels = data.map(item => item.feelsLike);
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.reverse(),
+                    datasets: [
+                        {
+                            label: 'Temperatura (°C)',
+                            data: temps.reverse(),
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Percepita (°C)',
+                            data: feels.reverse(),
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true, position: 'top' } },
+                    scales: { x: { title: { display: true, text: 'Data/Ora' } }, y: { title: { display: true, text: 'Temperatura (°C)' } } }
+                }
+            });
+            // Table
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(item.timestamp).toLocaleString('it-IT')}</td>
+                    <td><strong>${Math.round(item.temperature)}°C</strong></td>
+                    <td>${Math.round(item.feelsLike)}°C</td>
+                    <td>${item.description || ''}</td>
+                    <td>${item.humidity}%</td>
+                    <td>${item.windSpeed} km/h</td>
+                `;
+                tbody.appendChild(row);
+            });
+            showResults();
+        } catch (e) {
+            showNoData();
+        } finally {
+            hideLoading();
+        }
+    }
+    document.getElementById('loadBtn').addEventListener('click', loadHistory);
+    document.getElementById('daysSelect').addEventListener('change', loadHistory);
+    window.addEventListener('DOMContentLoaded', () => {
+        const city = getCityFromUrl();
+        if (city) {
+            document.getElementById('cityNameTitle').textContent = city;
+            document.getElementById('cityNameHeader').textContent = city;
+            loadHistory();
+        }
+    });
+    </script>
+</body>
+</html>

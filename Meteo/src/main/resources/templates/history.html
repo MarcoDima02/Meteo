@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storico Meteo - Meteo Italia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cloud-sun me-2"></i>
+                Meteo Italia
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/history">Storico</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="bg-gradient-primary text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h1 class="display-5 fw-bold">Storico Meteo</h1>
+                    <p class="lead">Visualizza l'andamento delle temperature nelle città italiane</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Section -->
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="historyCitySelect" class="form-label">Seleziona Città:</label>
+                                    <select id="historyCitySelect" class="form-select">
+                                        <option value="">Scegli una città...</option>
+                                        <option value="Roma">Roma</option>
+                                        <option value="Milano">Milano</option>
+                                        <option value="Napoli">Napoli</option>
+                                        <option value="Torino">Torino</option>
+                                        <option value="Palermo">Palermo</option>
+                                        <option value="Genova">Genova</option>
+                                        <option value="Bologna">Bologna</option>
+                                        <option value="Firenze">Firenze</option>
+                                        <option value="Bari">Bari</option>
+                                        <option value="Catania">Catania</option>
+                                        <option value="Venezia">Venezia</option>
+                                        <option value="Verona">Verona</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="historyDaysSelect" class="form-label">Periodo:</label>
+                                    <select id="historyDaysSelect" class="form-select">
+                                        <option value="1">Ultimo giorno</option>
+                                        <option value="3">Ultimi 3 giorni</option>
+                                        <option value="7" selected>Ultima settimana</option>
+                                        <option value="30">Ultimo mese</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button class="btn btn-primary w-100" onclick="loadHistory()">
+                                        <i class="fas fa-chart-line me-1"></i>Carica
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="py-5">
+        <div class="container">
+            <div id="historyChart" class="row" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0" id="chartTitle">Andamento Temperature</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="temperatureChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div id="historyTable" class="row mt-4" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Dati Dettagliati</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Data/Ora</th>
+                                            <th>Temperatura</th>
+                                            <th>Percepita</th>
+                                            <th>Condizioni</th>
+                                            <th>Umidità</th>
+                                            <th>Vento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                        <!-- I dati verranno inseriti qui dinamicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="historyLoadingSpinner" class="text-center py-5" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Caricamento...</span>
+                </div>
+                <p class="mt-2">Caricamento dati storici...</p>
+            </div>
+
+            <!-- No Data Message -->
+            <div id="noDataMessage" class="text-center py-5" style="display: none;">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Nessun dato storico disponibile per i parametri selezionati.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Meteo Italia</h5>
+                    <p class="small">Applicazione meteo per le principali città italiane</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="small">
+                        Dati forniti da Open Meteo<br>
+                        Storico dati disponibile per gli ultimi 30 giorni
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/history.js"></script>
+</body>
+</html>

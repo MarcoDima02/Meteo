@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  meteo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meteo-italia
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      # Volume per persistere i dati H2 (opzionale)
+      - meteo_data:/app/data
+    networks:
+      - meteo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/weather/italy/all"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx reverse proxy (opzionale)
+  nginx:
+    image: nginx:alpine
+    container_name: meteo-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - meteo-app
+    networks:
+      - meteo-network
+    restart: unless-stopped
+
+volumes:
+  meteo_data:
+    driver: local
+
+networks:
+  meteo-network:
+    driver: bridge
