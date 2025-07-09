@@ -1,5 +1,5 @@
 # Multi-stage build per ottimizzare le dimensioni dell'immagine
-FROM maven:3.8.6-openjdk-17-slim AS build
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 
 # Imposta la directory di lavoro
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage di runtime
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre
 
 # Installa curl per health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
@@ -28,14 +28,16 @@ RUN groupadd -r meteo && useradd -r -g meteo meteo
 # Imposta la directory di lavoro
 WORKDIR /app
 
+
 # Copia il JAR compilato dal stage di build
 COPY --from=build /app/target/meteo-app-*.jar app.jar
 
-# Cambia ownership dei file
-RUN chown -R meteo:meteo /app
+# Crea la directory dati
+RUN mkdir -p /app/data
 
-# Cambia all'utente non-root
-USER meteo
+# Copia lo script di entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Espone la porta 8080
 EXPOSE 8080
@@ -44,8 +46,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/api/weather/italy/all || exit 1
 
-# Comando per avviare l'applicazione
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando per avviare l'applicazione tramite entrypoint custom
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Opzioni JVM per container
 ENV JAVA_OPTS="-Xmx512m -Xms256m"

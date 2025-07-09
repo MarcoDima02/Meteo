@@ -14,7 +14,7 @@ Un'applicazione web per visualizzare le condizioni meteorologiche delle principa
 
 ## Città Supportate
 
-Roma, Milano, Napoli, Torino, Palermo, Genova, Bologna, Firenze, Bari, Catania, Venezia, Verona, Messina, Padova, Trieste, Brescia, Parma, Prato, Modena, Reggio Calabria
+Roma, Milano, Napoli, Torino, Palermo, Genova, Bologna, Firenze, Bari, Catania, Venezia, Verona, Messina, Padova, Trieste, Brescia, Parma, Prato, Modena, Reggio Calabria, Cisternino
 
 ## Tecnologie Utilizzate
 
@@ -48,24 +48,30 @@ Per maggiori informazioni su Open Meteo, consulta [OPEN_METEO_INFO.md](OPEN_METE
 
 ### 2. Configurazione Database
 
+
 ### Database H2
 
-L'applicazione utilizza un database H2 in-memory configurato automaticamente. I dati vengono persi al riavvio dell'applicazione.
+- In modalità **locale**: database H2 in-memory (dati persi al riavvio)
+- In modalità **Docker**: database H2 persistente su file (volume Docker)
 
-Per accedere alla console H2:
+Per accedere alla console H2 (solo per debug):
 - URL: http://localhost:8080/h2-console
-- JDBC URL: `jdbc:h2:mem:meteo_db`
+- JDBC URL (Docker): `jdbc:h2:file:/app/data/meteo_db`
 - Username: `sa`
 - Password: `password`
 
 ## Installazione e Avvio
 
+
 ### Prerequisiti
 
-- Java 17 o superiore
-- Maven 3.6 o superiore
+- **Per esecuzione locale:**
+  - Java 17 o superiore
+  - Maven 3.6 o superiore
+- **Per esecuzione in Docker:**
+  - Docker Desktop installato
 
-### Avvio Applicazione
+### Avvio Applicazione (modalità locale)
 
 ```bash
 # Clona il repository (se necessario)
@@ -81,6 +87,23 @@ java -jar target/meteo-app-0.0.1-SNAPSHOT.jar
 ```
 
 L'applicazione sarà disponibile su: http://localhost:8080
+
+### Avvio Applicazione con Docker
+
+```bash
+# Da dentro la cartella principale del progetto (dove c'è docker-compose.yml)
+docker-compose down -v
+docker-compose up --build
+```
+
+L'interfaccia sarà disponibile su: http://localhost:8081
+
+La console H2 sarà disponibile su: http://localhost:8080/h2-console
+
+**Nota:**
+- Nginx fa da reverse proxy sulla porta 8081.
+- I dati sono persistenti grazie al volume Docker.
+- Non serve alcuna API key: viene usato solo Open-Meteo.
 
 ## Struttura del Progetto
 
@@ -178,15 +201,11 @@ Nel file `application.properties`:
 weather.update.interval=300000
 ```
 
+
 ### Personalizzare Database
 
-Per utilizzare un database persistente, modifica `application.properties`:
-
-```properties
-# Esempio per database file H2
-spring.datasource.url=jdbc:h2:file:./data/meteo_db
-spring.jpa.hibernate.ddl-auto=update
-```
+- In locale puoi usare H2 in-memory o su file modificando `application.properties`.
+- In Docker la persistenza è già configurata in `application-docker.properties` e nel volume Docker.
 
 ## Troubleshooting
 
@@ -194,12 +213,11 @@ spring.jpa.hibernate.ddl-auto=update
 
 1. **API Key non valida**
 
-   - Verifica che la chiave API sia corretta
-   - Controlla i limiti di utilizzo su OpenWeatherMap
+   - Non serve più alcuna API key: viene usato solo Open-Meteo (gratuito)
 2. **Errori di connessione**
 
    - Verifica la connessione internet
-   - Controlla che OpenWeatherMap sia raggiungibile
+   - Controlla che Open-Meteo sia raggiungibile
 3. **Database H2**
 
    - In caso di errori, riavvia l'applicazione
@@ -230,5 +248,5 @@ Questo progetto è distribuito sotto licenza MIT. Vedi file LICENSE per dettagli
 
 ## Contributori
 
-- Sviluppatore: Marco Dima
+- Sviluppatore: Dima Marco
 - Data: Luglio 2025

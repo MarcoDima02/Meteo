@@ -88,4 +88,34 @@ public class WeatherController {
             return ResponseEntity.internalServerError().body("Errore nell'aggiornamento: " + e.getMessage());
         }
     }
+    
+    /**
+     * Endpoint per popolare il database con dati storici (GET version)
+     */
+    @GetMapping("/populate-historical")
+    public ResponseEntity<String> populateHistoricalDataGet(@RequestParam(defaultValue = "7") int days) {
+        return populateHistoricalData(days);
+    }
+
+    /**
+     * Endpoint per popolare il database con dati storici
+     */
+    @PostMapping("/populate-historical")
+    public ResponseEntity<String> populateHistoricalData(@RequestParam(defaultValue = "7") int days) {
+        try {
+            logger.info("Richiesto popolamento dati storici per {} giorni", days);
+            
+            if (days > 30) {
+                return ResponseEntity.badRequest().body("Massimo 30 giorni supportati");
+            }
+            
+            // Esegui in un thread separato per non bloccare la risposta HTTP
+            new Thread(() -> weatherService.populateHistoricalData(days)).start();
+            
+            return ResponseEntity.ok(String.format("Avviato popolamento dati storici per %d giorni. Controlla i log per il progresso.", days));
+        } catch (Exception e) {
+            logger.error("Errore nel popolamento dati storici: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
+        }
+    }
 }

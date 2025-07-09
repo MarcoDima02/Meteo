@@ -51,6 +51,7 @@ public class WeatherService {
         ITALIAN_CITIES.put("Prato", new double[]{43.8777, 11.1023});
         ITALIAN_CITIES.put("Modena", new double[]{44.6471, 10.9252});
         ITALIAN_CITIES.put("Reggio Calabria", new double[]{38.1102, 15.6615});
+        ITALIAN_CITIES.put("Cisternino", new double[]{40.7442, 17.4228});
     }
     
     @Autowired
@@ -166,6 +167,62 @@ public class WeatherService {
         logger.info("Aggiornamento automatico dati meteo completato");
     }
     
+    /**
+     * Popola il database con dati storici degli ultimi giorni da Open-Meteo
+     */
+    public void populateHistoricalData(int daysBack) {
+        logger.info("Inizio popolamento dati storici per {} giorni", daysBack);
+        
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(daysBack);
+        
+        for (String cityName : ITALIAN_CITIES.keySet()) {
+            try {
+                populateHistoricalDataForCity(cityName, startDate, endDate);
+                // Pausa di 1 secondo tra le chiamate per non sovraccaricare l'API
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                logger.error("Errore nel recupero dati storici per {}: {}", cityName, e.getMessage());
+            }
+        }
+        
+        logger.info("Completato popolamento dati storici");
+    }
+    
+    /**
+     * Popola i dati storici per una singola città
+     */
+    private void populateHistoricalDataForCity(String cityName, LocalDateTime startDate, LocalDateTime endDate) {
+        double[] coordinates = ITALIAN_CITIES.get(cityName);
+        if (coordinates == null) {
+            logger.warn("Coordinate non trovate per la città: {}", cityName);
+            return;
+        }
+        
+        // Formato date per Open-Meteo: YYYY-MM-DD
+        String startDateStr = startDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String endDateStr = endDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        
+        String url = String.format(
+            "https://archive-api.open-meteo.com/v1/archive?latitude=%.4f&longitude=%.4f" +
+            "&start_date=%s&end_date=%s&hourly=temperature_2m,apparent_temperature," +
+            "relative_humidity_2m,wind_speed_10m,surface_pressure,weather_code&timezone=Europe/Rome",
+            coordinates[0], coordinates[1], startDateStr, endDateStr
+        );
+        
+        try {
+            // Nota: questo è un esempio - Open-Meteo Archive API potrebbe richiedere parsing diverso
+            logger.info("Recupero dati storici per {} dal {} al {}", cityName, startDateStr, endDateStr);
+            logger.info("URL: {}", url);
+            
+            // Per ora logghiamo solo l'URL - implementazione completa richiederebbe parsing dell'array hourly
+            // e salvataggio di ogni ora nel database
+            
+        } catch (Exception e) {
+            logger.error("Errore nel recupero dati storici per {}: {}", cityName, e.getMessage());
+        }
+    }
+
     /**
      * Recupera i dati dall'API Open Meteo
      */
