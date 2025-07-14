@@ -1,6 +1,9 @@
 package com.meteo.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,6 +119,49 @@ public class WeatherController {
         } catch (Exception e) {
             logger.error("Errore nel popolamento dati storici: {}", e.getMessage());
             return ResponseEntity.internalServerError().body("Errore: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Endpoint per verificare lo stato dei dati storici
+     */
+    @GetMapping("/data-status")
+    public ResponseEntity<Map<String, Object>> getDataStatus() {
+        try {
+            Map<String, Object> status = new HashMap<>();
+            
+            // Conta totale dati
+            long totalData = weatherService.getTotalDataCount();
+            status.put("totalRecords", totalData);
+            
+            // Data più vecchia e più recente
+            LocalDateTime oldestData = weatherService.getOldestDataTimestamp();
+            LocalDateTime newestData = weatherService.getNewestDataTimestamp();
+            
+            status.put("oldestData", oldestData);
+            status.put("newestData", newestData);
+            
+            // Numero di città con dati
+            List<String> citiesWithData = weatherService.getCitiesWithData();
+            status.put("citiesWithData", citiesWithData);
+            status.put("citiesCount", citiesWithData.size());
+            
+            // Range di dati per i grafici
+            if (oldestData != null && newestData != null) {
+                long daysCovered = java.time.Duration.between(oldestData, newestData).toDays();
+                status.put("daysCovered", daysCovered);
+                status.put("readyForCharts", daysCovered > 0);
+            } else {
+                status.put("daysCovered", 0);
+                status.put("readyForCharts", false);
+            }
+            
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            logger.error("Errore nel recupero stato dati: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                Map.of("error", "Errore nel recupero stato dati: " + e.getMessage())
+            );
         }
     }
 }

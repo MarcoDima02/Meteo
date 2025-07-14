@@ -29,6 +29,9 @@ public interface WeatherDataRepository extends JpaRepository<WeatherData, Long> 
     // Trova tutti i dati di una città ordinati per timestamp
     List<WeatherData> findByCityNameOrderByTimestampDesc(String cityName);
     
+    // Trova i dati di una città dopo una certa data
+    List<WeatherData> findByCityNameAndTimestampAfter(String cityName, LocalDateTime timestamp);
+    
     // Elimina i dati più vecchi di una certa data
     void deleteByTimestampBefore(LocalDateTime timestamp);
     

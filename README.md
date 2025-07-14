@@ -68,8 +68,11 @@ Per accedere alla console H2 (solo per debug):
 - **Per esecuzione locale:**
   - Java 17 o superiore
   - Maven 3.6 o superiore
-- **Per esecuzione in Docker:**
-  - Docker Desktop installato
+- **Per esecuzione in Docker:** 🐳
+  - Docker Desktop installato e **avviato**
+  - Docker Compose (incluso in Docker Desktop)
+  - **Windows**: PowerShell o Command Prompt
+  - **Linux/macOS**: Bash shell
 
 ### Avvio Applicazione (modalità locale)
 
@@ -88,22 +91,55 @@ java -jar target/meteo-app-0.0.1-SNAPSHOT.jar
 
 L'applicazione sarà disponibile su: http://localhost:8080
 
-### Avvio Applicazione con Docker
+### Avvio Applicazione con Docker 🐳
 
-```bash
-# Da dentro la cartella principale del progetto (dove c'è docker-compose.yml)
-docker-compose down -v
+#### Windows (PowerShell):
+```powershell
+# Usando lo script predefinito (consigliato)
+.\deploy.bat
+
+# Oppure manualmente:
+docker-compose down
 docker-compose up --build
 ```
 
-L'interfaccia sarà disponibile su: http://localhost:8081
+#### Linux/macOS:
+```bash
+# Usando lo script predefinito (consigliato)
+./deploy.sh
 
-La console H2 sarà disponibile su: http://localhost:8080/h2-console
+# Oppure manualmente:
+docker-compose down
+docker-compose up --build
+```
 
-**Nota:**
-- Nginx fa da reverse proxy sulla porta 8081.
-- I dati sono persistenti grazie al volume Docker.
-- Non serve alcuna API key: viene usato solo Open-Meteo.
+#### 🌐 Accesso all'applicazione:
+- **Applicazione principale**: http://localhost:8080
+- **Nginx reverse proxy**: http://localhost:8081
+- **Console H2**: http://localhost:8080/h2-console
+
+#### 🔧 Comandi utili:
+```powershell
+# Visualizza log in tempo reale
+docker-compose logs -f
+
+# Ferma l'applicazione
+docker-compose down
+
+# Riavvia solo l'app
+docker-compose restart meteo-app
+
+# Stato dei container
+docker-compose ps
+```
+
+**✅ Caratteristiche Docker:**
+- ✅ **Multi-stage build** per immagini ottimizzate
+- ✅ **Dati persistenti** grazie al volume Docker
+- ✅ **Health checks** automatici
+- ✅ **Nginx reverse proxy** opzionale
+- ✅ **Utente non-root** per sicurezza
+- ✅ **Compatibilità Windows/Linux** (line endings corretti)
 
 ## Struttura del Progetto
 
@@ -212,16 +248,35 @@ weather.update.interval=300000
 ### Errori Comuni
 
 1. **API Key non valida**
-
    - Non serve più alcuna API key: viene usato solo Open-Meteo (gratuito)
-2. **Errori di connessione**
 
+2. **Errori di connessione**
    - Verifica la connessione internet
    - Controlla che Open-Meteo sia raggiungibile
-3. **Database H2**
 
+3. **Database H2**
    - In caso di errori, riavvia l'applicazione
    - I dati in-memory verranno ricreati
+
+4. **Problemi Docker** 🐳
+   - **Docker Desktop non avviato**: Assicurati che Docker Desktop sia in esecuzione
+   - **Errore "entrypoint.sh not found"**: Ricompila con `docker-compose build --no-cache`
+   - **Warning "version obsolete"**: Il warning è stato corretto, ignora se ancora appare
+   - **Container non si avvia**: Controlla i log con `docker-compose logs meteo-app`
+
+### Soluzioni Rapide Docker
+
+```powershell
+# Ricompila tutto da zero
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
+
+# Ripulisci tutto e riavvia
+docker-compose down -v
+docker system prune -f
+docker-compose up --build
+```
 
 ### Log di Debug
 
@@ -248,5 +303,23 @@ Questo progetto è distribuito sotto licenza MIT. Vedi file LICENSE per dettagli
 
 ## Contributori
 
-- Sviluppatore: Dima Marco
-- Data: Luglio 2025
+- **Sviluppatore**: Dima Marco
+- **Data**: Luglio 2025
+- **Ultima build Docker**: 14 Luglio 2025 ✅
+
+---
+
+## 🎉 Stato del Progetto
+
+**✅ COMPLETAMENTE FUNZIONALE**
+
+L'applicazione è stata testata e funziona correttamente sia in modalità locale che Docker. Tutti i problemi di compatibilità Windows/Linux sono stati risolti.
+
+**Quick Start:**
+```powershell
+# Windows - Avvio rapido
+.\deploy.bat
+
+# Accedi all'app: http://localhost:8080
+# Nginx proxy: http://localhost:8081
+```

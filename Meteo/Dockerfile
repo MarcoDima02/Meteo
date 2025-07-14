@@ -37,7 +37,8 @@ RUN mkdir -p /app/data
 
 # Copia lo script di entrypoint
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Fix per line endings Windows/Linux e permessi
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Espone la porta 8080
 EXPOSE 8080
